@@ -80,16 +80,17 @@
             position: relative;
         }
 
-        input[type="number"] {
+        input[type="number"], select {
             width: 100%;
             padding: 14px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
             font-size: 1rem;
             transition: all 0.3s ease;
+            background: white;
         }
 
-        input[type="number"]:focus {
+        input[type="number"]:focus, select:focus {
             outline: none;
             border-color: #ed8936;
             box-shadow: 0 0 0 3px rgba(237, 137, 54, 0.2);
@@ -99,6 +100,30 @@
             font-size: 0.85rem;
             color: #718096;
             margin-top: 5px;
+        }
+
+        .sector-info {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            border-left: 4px solid #ed8936;
+        }
+
+        .sector-info h4 {
+            color: #1a365d;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .sector-info p {
+            font-size: 0.85rem;
+            color: #4a5568;
+            margin: 4px 0;
+        }
+
+        .sector-info strong {
+            color: #ed8936;
         }
 
         .btn-calculate {
@@ -122,6 +147,42 @@
 
         .btn-calculate:active {
             transform: translateY(0);
+        }
+
+        .btn-calculate:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #ed8936;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
         .results {
@@ -174,6 +235,41 @@
             margin-top: 20px;
         }
 
+        .sector-badge {
+            display: inline-block;
+            background: #ed8936;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .detail-item {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .detail-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a365d;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
         .cta-section {
             text-align: center;
             padding: 30px;
@@ -217,6 +313,13 @@
             font-size: 0.9rem;
         }
 
+        .data-source {
+            font-size: 0.75rem;
+            color: #a0aec0;
+            text-align: center;
+            margin-top: 10px;
+        }
+
         /* Mobile responsive */
         @media (max-width: 600px) {
             .logo {
@@ -258,7 +361,32 @@
 
         <div class="card">
             <h2 class="card-title">📊 Vos données entreprise</h2>
-            <form id="roiForm">
+
+            <div id="loadingData" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Chargement des données sectorielles...</p>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;">
+                Impossible de charger les données. Utilisation des valeurs par défaut.
+            </div>
+
+            <form id="roiForm" style="display: none;">
+                <div class="form-group">
+                    <label for="sector">Secteur d'activité</label>
+                    <div class="input-wrapper">
+                        <select id="sector" required>
+                            <option value="">-- Sélectionnez votre secteur --</option>
+                        </select>
+                    </div>
+                    <div id="sectorInfo" class="sector-info" style="display: none;">
+                        <h4>📈 Données sectorielles</h4>
+                        <p>Heures automatisables : <strong id="infoHours">-</strong></p>
+                        <p>Taux d'adoption IA : <strong id="infoAdoption">-</strong></p>
+                        <p>Coût formation recommandé : <strong id="infoCost">-</strong></p>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="employees">Nombre d'employés concernés</label>
                     <div class="input-wrapper">
@@ -283,13 +411,15 @@
                     <p class="input-hint">Coût chargé moyen par heure de travail</p>
                 </div>
 
-                <button type="submit" class="btn-calculate">🚀 Calculer mon ROI</button>
+                <button type="submit" class="btn-calculate" id="btnCalculate" disabled>🚀 Calculer mon ROI</button>
             </form>
         </div>
 
         <div class="results" id="results">
             <div class="card">
                 <h2 class="card-title">💰 Votre potentiel d'économies</h2>
+
+                <div class="sector-badge" id="resultSector">Secteur</div>
 
                 <div class="stats-grid">
                     <div class="stat-card highlight">
@@ -303,6 +433,21 @@
                     <div class="stat-card">
                         <div class="stat-value" id="timeRecovered">0h</div>
                         <div class="stat-label">Temps récupéré / an</div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-value" id="detailInvestment">0 €</div>
+                        <div class="detail-label">Investissement formation</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="detailAdoption">0%</div>
+                        <div class="detail-label">Taux d'adoption prévu</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="detailPayback">0 mois</div>
+                        <div class="detail-label">Délai de rentabilité</div>
                     </div>
                 </div>
 
@@ -320,12 +465,137 @@
 
         <footer>
             © 2025 Mister IA - Conseil en Intelligence Artificielle
+            <p class="data-source">Données sectorielles mises à jour en temps réel</p>
         </footer>
     </div>
 
     <script>
+        // ============================================
+        // CONFIGURATION - MODIFIE CETTE URL
+        // ============================================
+        // Remplace par l'ID de ton Google Sheet
+        const GOOGLE_SHEET_ID = '1Dd59Xsshm-qEdfmvC0Eobk4NwtFOY8LsMCsOXAlfb6I';
+
+        // Nom de l'onglet (feuille) dans le Sheet
+        const SHEET_NAME = 'Secteurs';
+
+        // URL complète pour récupérer les données
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+
+        // ============================================
+        // DONNÉES PAR DÉFAUT (si Google Sheet indisponible)
+        // ============================================
+        const DEFAULT_SECTORS = [
+            { secteur: "Finance & Banque", heuresAutomatisables: 8, tauxAdoption: 75, coutFormation: 2000, description: "Analyse de données, reporting, conformité" },
+            { secteur: "Santé", heuresAutomatisables: 5, tauxAdoption: 60, coutFormation: 1800, description: "Documentation, planification, analyse médicale" },
+            { secteur: "Retail & E-commerce", heuresAutomatisables: 6, tauxAdoption: 70, coutFormation: 1500, description: "Service client, inventaire, marketing" },
+            { secteur: "Industrie", heuresAutomatisables: 7, tauxAdoption: 65, coutFormation: 1700, description: "Maintenance prédictive, qualité, logistique" },
+            { secteur: "Services & Conseil", heuresAutomatisables: 9, tauxAdoption: 80, coutFormation: 2200, description: "Recherche, rédaction, analyse" },
+            { secteur: "Tech & IT", heuresAutomatisables: 10, tauxAdoption: 85, coutFormation: 2500, description: "Développement, tests, documentation" },
+            { secteur: "Juridique", heuresAutomatisables: 7, tauxAdoption: 65, coutFormation: 2000, description: "Recherche juridique, contrats, conformité" },
+            { secteur: "RH & Recrutement", heuresAutomatisables: 8, tauxAdoption: 75, coutFormation: 1600, description: "Sourcing, screening, onboarding" },
+            { secteur: "Marketing & Communication", heuresAutomatisables: 9, tauxAdoption: 80, coutFormation: 1800, description: "Création contenu, analyse, campagnes" },
+            { secteur: "Éducation & Formation", heuresAutomatisables: 5, tauxAdoption: 55, coutFormation: 1400, description: "Création de cours, évaluation, administration" }
+        ];
+
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        let sectorsData = [];
         let savingsChart = null;
 
+        // ============================================
+        // CHARGEMENT DES DONNÉES
+        // ============================================
+        async function loadSectorData() {
+            try {
+                const response = await fetch(SHEET_URL);
+                const text = await response.text();
+
+                // Parser la réponse Google Sheets (format JSONP)
+                const jsonString = text.substring(47).slice(0, -2);
+                const data = JSON.parse(jsonString);
+
+                // Extraire les données
+                sectorsData = data.table.rows.map(row => ({
+                    secteur: row.c[0]?.v || '',
+                    heuresAutomatisables: parseFloat(row.c[1]?.v) || 5,
+                    tauxAdoption: parseFloat(row.c[2]?.v) || 70,
+                    coutFormation: parseFloat(row.c[3]?.v) || 1500,
+                    description: row.c[4]?.v || ''
+                })).filter(s => s.secteur);
+
+                if (sectorsData.length === 0) {
+                    throw new Error('Aucune donnée trouvée');
+                }
+
+                console.log('Données chargées depuis Google Sheets:', sectorsData);
+                initializeForm();
+
+            } catch (error) {
+                console.warn('Erreur chargement Google Sheets, utilisation des données par défaut:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+                sectorsData = DEFAULT_SECTORS;
+                initializeForm();
+            }
+        }
+
+        // ============================================
+        // INITIALISATION DU FORMULAIRE
+        // ============================================
+        function initializeForm() {
+            const loadingEl = document.getElementById('loadingData');
+            const formEl = document.getElementById('roiForm');
+            const selectEl = document.getElementById('sector');
+            const btnEl = document.getElementById('btnCalculate');
+
+            // Cacher le loading, afficher le formulaire
+            loadingEl.style.display = 'none';
+            formEl.style.display = 'block';
+
+            // Remplir le sélecteur de secteurs
+            sectorsData.forEach((sector, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = sector.secteur;
+                selectEl.appendChild(option);
+            });
+
+            // Activer le bouton
+            btnEl.disabled = false;
+
+            // Event listener pour le changement de secteur
+            selectEl.addEventListener('change', function() {
+                updateSectorInfo(this.value);
+            });
+        }
+
+        // ============================================
+        // MISE À JOUR DES INFOS SECTEUR
+        // ============================================
+        function updateSectorInfo(index) {
+            const infoEl = document.getElementById('sectorInfo');
+
+            if (index === '') {
+                infoEl.style.display = 'none';
+                return;
+            }
+
+            const sector = sectorsData[index];
+
+            document.getElementById('infoHours').textContent = sector.heuresAutomatisables + 'h / semaine';
+            document.getElementById('infoAdoption').textContent = sector.tauxAdoption + '%';
+            document.getElementById('infoCost').textContent = formatCurrency(sector.coutFormation) + ' / employé';
+
+            // Pré-remplir les heures perdues avec la valeur du secteur
+            document.getElementById('hoursLost').value = sector.heuresAutomatisables;
+
+            infoEl.style.display = 'block';
+        }
+
+        // ============================================
+        // CALCUL DU ROI
+        // ============================================
         document.getElementById('roiForm').addEventListener('submit', function(e) {
             e.preventDefault();
             calculateROI();
@@ -333,40 +603,61 @@
 
         function calculateROI() {
             // Récupération des valeurs
+            const sectorIndex = document.getElementById('sector').value;
             const employees = parseFloat(document.getElementById('employees').value);
             const hoursLost = parseFloat(document.getElementById('hoursLost').value);
             const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
 
-            // Calculs
-            const weeksPerYear = 47; // 52 semaines - 5 semaines de congés
-            const automationEfficiency = 0.7; // 70% des heures peuvent être automatisées
+            if (sectorIndex === '') {
+                alert('Veuillez sélectionner un secteur d\'activité');
+                return;
+            }
 
+            const sector = sectorsData[sectorIndex];
+
+            // Paramètres du secteur
+            const adoptionRate = sector.tauxAdoption / 100;
+            const trainingCostPerEmployee = sector.coutFormation;
+
+            // Calculs
+            const weeksPerYear = 47;
             const totalHoursLostPerYear = employees * hoursLost * weeksPerYear;
-            const hoursRecoveredPerYear = totalHoursLostPerYear * automationEfficiency;
+            const hoursRecoveredPerYear = totalHoursLostPerYear * adoptionRate;
             const annualSavings = hoursRecoveredPerYear * hourlyRate;
 
-            // Coût estimé de la formation (pour le calcul du ROI)
-            const trainingCostPerEmployee = 1500; // Coût moyen formation IA
+            // Investissement
             const totalInvestment = employees * trainingCostPerEmployee;
 
-            // ROI = (Gains - Investissement) / Investissement * 100
+            // ROI
             const roi = ((annualSavings - totalInvestment) / totalInvestment) * 100;
 
+            // Délai de rentabilité (en mois)
+            const monthlysSavings = annualSavings / 12;
+            const paybackMonths = Math.ceil(totalInvestment / monthlysSavings);
+
             // Affichage des résultats
+            document.getElementById('resultSector').textContent = sector.secteur;
             document.getElementById('annualSavings').textContent = formatCurrency(annualSavings);
             document.getElementById('roiPercent').textContent = Math.round(roi) + '%';
             document.getElementById('timeRecovered').textContent = formatHours(hoursRecoveredPerYear);
+
+            document.getElementById('detailInvestment').textContent = formatCurrency(totalInvestment);
+            document.getElementById('detailAdoption').textContent = sector.tauxAdoption + '%';
+            document.getElementById('detailPayback').textContent = paybackMonths + ' mois';
 
             // Afficher la section des résultats
             document.getElementById('results').classList.add('active');
 
             // Créer le graphique
-            createChart(annualSavings);
+            createChart(annualSavings, adoptionRate);
 
             // Scroll vers les résultats
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
 
+        // ============================================
+        // FORMATAGE
+        // ============================================
         function formatCurrency(value) {
             return new Intl.NumberFormat('fr-FR', {
                 style: 'currency',
@@ -382,18 +673,20 @@
             return Math.round(hours) + 'h';
         }
 
-        function createChart(annualSavings) {
+        // ============================================
+        // GRAPHIQUE
+        // ============================================
+        function createChart(annualSavings, adoptionRate) {
             const ctx = document.getElementById('savingsChart').getContext('2d');
 
-            // Détruire le graphique existant s'il y en a un
             if (savingsChart) {
                 savingsChart.destroy();
             }
 
-            // Projection sur 3 ans avec croissance de 15% par an (adoption progressive)
-            const year1 = annualSavings * 0.7; // 70% la première année (période d'adoption)
-            const year2 = annualSavings * 1.0; // 100% la deuxième année
-            const year3 = annualSavings * 1.15; // 115% la troisième année (optimisation)
+            // Projection sur 3 ans avec montée en puissance selon le taux d'adoption
+            const year1 = annualSavings * (0.5 + adoptionRate * 0.3);
+            const year2 = annualSavings * (0.8 + adoptionRate * 0.2);
+            const year3 = annualSavings * (1 + adoptionRate * 0.15);
 
             const cumulativeYear1 = year1;
             const cumulativeYear2 = cumulativeYear1 + year2;
@@ -466,6 +759,11 @@
                 }
             });
         }
+
+        // ============================================
+        // DÉMARRAGE
+        // ============================================
+        document.addEventListener('DOMContentLoaded', loadSectorData);
     </script>
 </body>
 </html>
